@@ -8,12 +8,13 @@ import {
 import TodoList from './comp/TodoList'; // Componente que lista as tarefas
 import AddTodo from './comp/AddTodo'; // Componente para adicionar tarefas
 import { Todo } from './comp/Todo'; // Tipo Todo
-import { getDBConnection, createTable, getTodoItems, addTodoItem,deleteTodoItem } from './comp/database';
+import { getDBConnection, createTable, getTodoItems, addTodoItem, deleteTodoItem } from './comp/database'; // Importando as funções
 
 const App: React.FC = () => {
   const [tarefas, setTodos] = useState<Todo[]>([]);
-  const [filter, setFilter] = useState(''); 
-  //codigo para conexao com banco de dados
+  const [filter, setFilter] = useState(''); // Estado para armazenar o filtro
+
+  // Carregar tarefas do banco ao inicializar o app
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -28,12 +29,19 @@ const App: React.FC = () => {
     loadData();
   }, []);
 
-//codigo para conexao com banco de dados
-
-
-  const adicionaTarefa = (todoText: string) => {
+  const adicionaTarefa = async (todoText: string) => {
     if (todoText.length > 0) {
-      setTodos([...tarefas, { id: Date.now().toString(), text: todoText }]);
+      const novaTarefa = { id: Date.now().toString(), text: todoText };
+      try {
+        const db = await getDBConnection(); // Conectar ao banco
+        await addTodoItem(db, novaTarefa); // Adicionar a nova tarefa no banco
+        setTodos([...tarefas, novaTarefa]); // Atualizar o estado com a nova tarefa
+      } catch (error) {
+        Alert.alert("Erro", "Falha ao adicionar tarefa no banco", [
+          { text: "OK" }
+        ]);
+        console.error('Erro ao adicionar tarefa: ', error);
+      }
     } else {
       Alert.alert("Erro", "Preencha um valor na tarefa", [
         { text: "OK" }
@@ -41,8 +49,17 @@ const App: React.FC = () => {
     }
   };
 
-  const removerTarefa = (idTarefa: string) => {
-    setTodos([...tarefas.filter(tarefa => tarefa.id !== idTarefa)]);
+  const removerTarefa = async (idTarefa: string) => {
+    try {
+      const db = await getDBConnection(); // Conectar ao banco
+      await deleteTodoItem(db, idTarefa); // Remover tarefa do banco
+      setTodos(tarefas.filter(tarefa => tarefa.id !== idTarefa)); // Atualizar o estado
+    } catch (error) {
+      Alert.alert("Erro", "Falha ao remover tarefa do banco", [
+        { text: "OK" }
+      ]);
+      console.error('Erro ao remover tarefa: ', error);
+    }
   };
 
   // Filtrar tarefas com base no texto do filtro
