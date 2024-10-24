@@ -23,7 +23,7 @@ export const getDBConnection = async () : Promise<Database> => {
     }
     catch (erro) {
         console.error("Erro na abertura do banco: " + erro);
-        throw new Error("Falha de conexao com o banco de dados");
+        throw new Error("Falha de conexão com o banco de dados");
     }
 };
 
@@ -38,24 +38,34 @@ export const createTable = async (db: Database) : Promise<any> => {
     }
 }
 
-export const getTodoItems = async (db: Database) : Promise<any[]> => {
-
+export const getTodoItems = async (db: Database): Promise<Todo[]> => {
     try {
-        const query = "select id, task from todo_items";
+        const query = "SELECT id, task FROM todo_items";
         const result = await db.executeSql(query);
-        let todos = [];
-        let rows = result[0].rows;
-        for(let i = 0; i < rows.length; i++) {
-            todos.push(
-                ...rows.item[i]
-            );
+        
+        // Garantir que o resultado não esteja vazio
+        if (result.length > 0 && result[0].rows.length > 0) {
+            let todos: Todo[] = [];
+            const rows = result[0].rows;
+            
+            // Iterar corretamente sobre os resultados
+            for (let i = 0; i < rows.length; i++) {
+                todos.push({
+                    id: rows.item(i).id,
+                    text: rows.item(i).task
+                });
+            }
+            return todos;
+        } else {
+            console.log("Nenhuma tarefa encontrada no banco de dados.");
+            return []; // Retorna uma lista vazia se não houver tarefas
         }
-        return todos;        
     } catch (erro) {
         console.log("Erro ao ler tabela: " + erro);
         throw new Error("Falha para ler dados do banco");
     }
-}
+};
+
 
 export const addTodoItem = async (db: Database, tarefa: Todo) : Promise<void> => {
     try {
